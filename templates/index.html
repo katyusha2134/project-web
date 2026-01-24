@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Translator Pro</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-robot"></i> AI Translator Pro</h1>
+            <p>แปลได้ทั่วโลก | สแกนภาพ | ถามตอบอัจฉริยะ</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openTab('translate-tab')"><i class="fas fa-language"></i> แปลข้อความ</button>
+            <button class="tab-btn" onclick="openTab('ocr-tab')"><i class="fas fa-image"></i> แปลรูปภาพ (OCR)</button>
+            <button class="tab-btn" onclick="openTab('chat-tab')"><i class="fas fa-comments"></i> ถามครูภาษา</button>
+        </div>
+
+        <div class="content-box">
+            <div id="translate-tab" class="tab-content active">
+                <div class="controls">
+                    <select id="src-lang"></select>
+                    
+                    <i class="fas fa-exchange-alt arrow-icon" onclick="swapLanguages()"></i>
+                    
+                    <select id="tgt-lang"></select>
+                </div>
+
+                <div class="text-area-container">
+                    <textarea id="input-text" placeholder="พิมพ์ข้อความที่นี่..."></textarea>
+                    <div class="tools-bar">
+                        <button onclick="startSpeech('input-text')" title="พูดด้วยเสียง"><i class="fas fa-microphone"></i></button>
+                        <button onclick="speakText('input-text', 'src-lang')" title="ฟังเสียงอ่าน"><i class="fas fa-volume-up"></i></button>
+                        <button onclick="copyText('input-text')" title="คัดลอก"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <button class="action-btn" onclick="translateText()">แปลทันที</button>
+                
+                <div class="result-area">
+                    <div id="output-text">ผลลัพธ์จะปรากฏที่นี่...</div>
+                    <div class="tools-bar" style="margin-top: 10px;">
+                        <button onclick="speakText('output-text', 'tgt-lang')" title="ฟังคำแปล"><i class="fas fa-volume-up"></i></button>
+                        <button onclick="copyText('output-text')" title="คัดลอก"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="ocr-tab" class="tab-content" style="display:none;">
+                <div class="upload-area" onclick="document.getElementById('image-input').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>คลิกเพื่ออัปโหลดรูปภาพ</p>
+                    <input type="file" id="image-input" hidden accept="image/*" onchange="previewImage()">
+                </div>
+                <img id="image-preview" class="hidden" alt="Preview">
+                
+                <div class="controls" style="margin-top: 15px;">
+                    <label>แปลเป็น:</label>
+                    <select id="ocr-tgt-lang"></select> </div>
+                <button class="action-btn" onclick="translateImage()">สแกนและแปล</button>
+                
+                <div class="ocr-result-grid">
+                    <div class="box">
+                        <h4>ข้อความในรูป:</h4>
+                        <p id="ocr-extracted">-</p>
+                    </div>
+                    <div class="box">
+                        <h4>คำแปล:</h4>
+                        <p id="ocr-translated">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chat-tab" class="tab-content" style="display:none;">
+                <div class="chat-box" id="chat-history">
+                    <div class="msg bot">สวัสดีครับ! สงสัยคำศัพท์ไหนถามผมได้เลยครับ</div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-input" placeholder="เช่น 'Water' แปลว่าอะไร?">
+                    <button onclick="sendChat()"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

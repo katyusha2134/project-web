@@ -1,0 +1,217 @@
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap');
+
+:root {
+    --primary: #4f46e5;
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #f1f5f9;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.container {
+    width: 90%;
+    max-width: 800px;
+    margin-top: 50px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    justify-content: center;
+}
+
+.tab-btn {
+    background: transparent;
+    border: 1px solid var(--primary);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.tab-btn.active, .tab-btn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+/* Content Box */
+.content-box {
+    background: var(--card);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+textarea, input, select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: white;
+    margin-bottom: 15px;
+    box-sizing: border-box; /* สำคัญ */
+}
+
+.action-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.action-btn:hover {
+    opacity: 0.9;
+}
+
+.result-area {
+    margin-top: 20px;
+    padding: 15px;
+    background: #334155;
+    border-radius: 8px;
+    min-height: 50px;
+}
+
+/* Upload Area */
+.upload-area {
+    border: 2px dashed #475569;
+    padding: 30px;
+    text-align: center;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+.upload-area:hover { border-color: var(--primary); }
+
+#image-preview {
+    max-width: 100%;
+    max-height: 300px;
+    display: block;
+    margin: 0 auto 20px;
+    border-radius: 10px;
+}
+.hidden { display: none; }
+
+/* ------------------------------------------------ */
+/* Chat Styling (อัปเกรดใหม่) */
+/* ------------------------------------------------ */
+
+.chat-box {
+    height: 400px; /* เพิ่มความสูงให้เห็นข้อความเยอะขึ้น */
+    overflow-y: auto;
+    border: 1px solid #334155;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    background-color: #0b1120; /* พื้นหลังแชทสีเข้มขึ้นนิดนึง */
+}
+
+.msg {
+    padding: 12px 18px; /* เพิ่มพื้นที่หายใจให้ตัวหนังสือ */
+    border-radius: 18px;
+    margin-bottom: 12px;
+    max-width: 80%; /* ไม่ให้ข้อความยาวติดขอบจอ */
+    line-height: 1.6; /* เว้นระยะบรรทัดให้อ่านง่าย */
+    word-wrap: break-word;
+    font-size: 15px;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* ใส่เงาเล็กๆ ให้ดูลอย */
+}
+
+.msg.bot {
+    background: #334155;
+    color: #e2e8f0;
+    border-bottom-left-radius: 4px; /* ลูกเล่นมุมแหลม */
+    align-self: flex-start;
+}
+
+/* ทำให้ตัวหนา (Bold) ในแชทบอทเป็นสีทองอ่อนๆ จะได้เด่น */
+.msg.bot b {
+    color: #fbbf24; 
+    font-weight: 600;
+}
+
+.msg.user {
+    background: var(--primary); /* สีน้ำเงิน */
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: 4px;
+    text-align: left;
+}
+
+/* ส่วนกล่องพิมพ์ข้อความด้านล่าง (คงของเดิมไว้) */
+.chat-input-area { 
+    display: flex; 
+    gap: 10px; 
+}
+.chat-input-area button { 
+    width: auto; 
+    padding: 0 20px; 
+}
+/* Tools Bar (แถบเครื่องมือ ไมค์/ลำโพง) */
+.tools-bar {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.tools-bar button {
+    background: transparent;
+    border: 1px solid #475569;
+    color: #94a3b8;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.tools-bar button:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: rgba(79, 70, 229, 0.1);
+}
+
+.text-area-container {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+
+/* ลบขอบ textarea เดิม เพราะเรามีกรอบนอกแล้ว */
+.text-area-container textarea {
+    border: none;
+    margin-bottom: 0;
+    resize: vertical;
+    min-height: 100px;
+}
+.arrow-icon {
+    cursor: pointer;
+    transition: 0.3s;
+}
+.arrow-icon:hover {
+    color: var(--primary);
+    transform: rotate(180deg);
+}
