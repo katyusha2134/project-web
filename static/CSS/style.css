@@ -28,7 +28,9 @@ header {
     margin-bottom: 30px;
 }
 
+/* ===================== */
 /* Tabs */
+/* ===================== */
 .tabs {
     display: flex;
     gap: 10px;
@@ -46,12 +48,15 @@ header {
     transition: 0.3s;
 }
 
-.tab-btn.active, .tab-btn:hover {
+.tab-btn.active,
+.tab-btn:hover {
     background: var(--primary);
     border-color: var(--primary);
 }
 
+/* ===================== */
 /* Content Box */
+/* ===================== */
 .content-box {
     background: var(--card);
     padding: 30px;
@@ -59,7 +64,12 @@ header {
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
-textarea, input, select {
+/* ------------------------------------------------ */
+/* Base Form Controls */
+/* ------------------------------------------------ */
+textarea,
+input,
+select {
     width: 100%;
     padding: 12px;
     border-radius: 8px;
@@ -67,9 +77,12 @@ textarea, input, select {
     background: #0f172a;
     color: white;
     margin-bottom: 15px;
-    box-sizing: border-box; /* สำคัญ */
+    box-sizing: border-box;
 }
 
+/* ===================== */
+/* Action Button */
+/* ===================== */
 .action-btn {
     width: 100%;
     padding: 12px;
@@ -85,6 +98,9 @@ textarea, input, select {
     opacity: 0.9;
 }
 
+/* ===================== */
+/* Result Area */
+/* ===================== */
 .result-area {
     margin-top: 20px;
     padding: 15px;
@@ -93,7 +109,9 @@ textarea, input, select {
     min-height: 50px;
 }
 
+/* ===================== */
 /* Upload Area */
+/* ===================== */
 .upload-area {
     border: 2px dashed #475569;
     padding: 30px;
@@ -102,7 +120,10 @@ textarea, input, select {
     cursor: pointer;
     margin-bottom: 20px;
 }
-.upload-area:hover { border-color: var(--primary); }
+
+.upload-area:hover {
+    border-color: var(--primary);
+}
 
 #image-preview {
     max-width: 100%;
@@ -111,65 +132,109 @@ textarea, input, select {
     margin: 0 auto 20px;
     border-radius: 10px;
 }
-.hidden { display: none; }
 
-/* ------------------------------------------------ */
-/* Chat Styling (อัปเกรดใหม่) */
-/* ------------------------------------------------ */
+.hidden {
+    display: none;
+}
 
+/* ================================================= */
+/* OCR UX IMPROVEMENT (ADD) */
+/* ================================================= */
+/* [ADD] แยก Source / Target Language ชัดเจน */
+.ocr-lang-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+/* [ADD] กล่องแต่ละภาษา */
+.ocr-lang-box {
+    display: flex;
+    flex-direction: column;
+}
+
+/* [ADD] เน้น label ให้ชัด */
+.ocr-lang-box label {
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+/* [ADD] ข้อความอธิบายเล็ก */
+.hint-text {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: -8px;
+}
+
+/* [ADD] รองรับมือถือ */
+@media (max-width: 600px) {
+    .ocr-lang-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ================================================= */
+/* Chat Styling */
+/* ================================================= */
 .chat-box {
-    height: 400px; /* เพิ่มความสูงให้เห็นข้อความเยอะขึ้น */
+    height: 400px;
     overflow-y: auto;
     border: 1px solid #334155;
     padding: 20px;
     border-radius: 12px;
     margin-bottom: 20px;
-    background-color: #0b1120; /* พื้นหลังแชทสีเข้มขึ้นนิดนึง */
+    background-color: #0b1120;
 }
 
 .msg {
-    padding: 12px 18px; /* เพิ่มพื้นที่หายใจให้ตัวหนังสือ */
+    padding: 12px 18px;
     border-radius: 18px;
     margin-bottom: 12px;
-    max-width: 80%; /* ไม่ให้ข้อความยาวติดขอบจอ */
-    line-height: 1.6; /* เว้นระยะบรรทัดให้อ่านง่าย */
+    max-width: 80%;
+    line-height: 1.6;
     word-wrap: break-word;
     font-size: 15px;
     position: relative;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* ใส่เงาเล็กๆ ให้ดูลอย */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 .msg.bot {
     background: #334155;
     color: #e2e8f0;
-    border-bottom-left-radius: 4px; /* ลูกเล่นมุมแหลม */
+    border-bottom-left-radius: 4px;
     align-self: flex-start;
 }
 
-/* ทำให้ตัวหนา (Bold) ในแชทบอทเป็นสีทองอ่อนๆ จะได้เด่น */
 .msg.bot b {
-    color: #fbbf24; 
+    color: #fbbf24;
     font-weight: 600;
 }
 
 .msg.user {
-    background: var(--primary); /* สีน้ำเงิน */
+    background: var(--primary);
     color: white;
     margin-left: auto;
     border-bottom-right-radius: 4px;
     text-align: left;
 }
 
-/* ส่วนกล่องพิมพ์ข้อความด้านล่าง (คงของเดิมไว้) */
-.chat-input-area { 
-    display: flex; 
-    gap: 10px; 
+/* ===================== */
+/* Chat Input */
+/* ===================== */
+.chat-input-area {
+    display: flex;
+    gap: 10px;
 }
-.chat-input-area button { 
-    width: auto; 
-    padding: 0 20px; 
+
+.chat-input-area button {
+    width: auto;
+    padding: 0 20px;
 }
-/* Tools Bar (แถบเครื่องมือ ไมค์/ลำโพง) */
+
+/* ===================== */
+/* Tools Bar */
+/* ===================== */
 .tools-bar {
     display: flex;
     gap: 10px;
@@ -192,6 +257,9 @@ textarea, input, select {
     background: rgba(79, 70, 229, 0.1);
 }
 
+/* ===================== */
+/* Text Area Container */
+/* ===================== */
 .text-area-container {
     background: #0f172a;
     border: 1px solid #334155;
@@ -200,18 +268,32 @@ textarea, input, select {
     margin-bottom: 15px;
 }
 
-/* ลบขอบ textarea เดิม เพราะเรามีกรอบนอกแล้ว */
+/* [UNCHANGED] textarea ด้านใน */
 .text-area-container textarea {
     border: none;
     margin-bottom: 0;
     resize: vertical;
     min-height: 100px;
 }
+
+/* ===================== */
+/* Arrow Icon */
+/* ===================== */
 .arrow-icon {
     cursor: pointer;
     transition: 0.3s;
 }
+
 .arrow-icon:hover {
     color: var(--primary);
     transform: rotate(180deg);
 }
+
+/* ================================================= */
+/* REMOVED / UNUSED (COMMENTED BY DESIGN) */
+/* ================================================= */
+/*
+เดิมไม่มี class สำหรับแยก OCR source/target
+จึงไม่ลบอะไรออกเพื่อป้องกัน side-effect
+ทุกอย่างที่เพิ่มเป็น additive-only
+*/

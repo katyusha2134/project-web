@@ -12,7 +12,7 @@ CORS(app)
 # ==========================================
 # 1. ตั้งค่า API Key (Gemini)
 # ==========================================
-API_KEY = "AIzaSyBTTrg7SIBL8t8Ngu8fFOAbZBNK3CDVoaA"
+API_KEY = "********"
 genai.configure(api_key=API_KEY)
 chat_model = genai.GenerativeModel('gemini-flash-latest')
 
