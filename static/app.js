@@ -2,7 +2,7 @@
 // Global Configuration
 // ==================================================
 //const API_BASE = "http://127.0.0.1:8000"; localhost
-const API_BASE = "https://armed-studying-url-rick.trycloudflare.com "; //publc domain (ต้องเปลี่ยนทุกครั้งที่ปิดเครื่อง หรือปิด terminal )
+const API_BASE = "https://armed-studying-url-rick.trycloudflare.com"; //publc domain (ต้องเปลี่ยนทุกครั้งที่ปิดเครื่อง หรือปิด terminal )
 
 
 // ==================================================
