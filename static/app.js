@@ -2,7 +2,7 @@
 // Global Configuration
 // ==================================================
 //const API_BASE = "http://127.0.0.1:8000"; localhost
-const API_BASE = "https://armed-studying-url-rick.trycloudflare.com"; //publc domain (ต้องเปลี่ยนทุกครั้งที่ปิดเครื่อง หรือปิด terminal )
+const API_BASE = "https://gibson-sperm-certificates-spring.trycloudflare.com"; //publc domain (ต้องเปลี่ยนทุกครั้งที่ปิดเครื่อง หรือปิด terminal )
 
 
 // ==================================================
@@ -291,4 +291,75 @@ function openTab(tabId) {
       btn.classList.add("active");
     }
   });
+}
+
+
+// ==================================================
+// Text To Speech (TTS)
+// ==================================================
+function speakText(elementId, langSelectorId) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+
+  const text = el.value || el.innerText;
+  if (!text.trim()) return;
+
+  const langCode = document.getElementById(langSelectorId)?.value || "en";
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = langCode;
+
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utterance);
+}
+
+
+// ==================================================
+// Speech To Text (Voice Input)
+// ==================================================
+function startSpeech(targetId) {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    alert("Browser ไม่รองรับ Speech Recognition");
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+
+  const lang =
+    document.getElementById("src-lang")?.value || "en";
+
+  recognition.lang = lang;
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = function (event) {
+    const transcript = event.results[0][0].transcript;
+    const target = document.getElementById(targetId);
+    if (target) {
+      target.value += transcript;
+    }
+  };
+
+  recognition.onerror = function (event) {
+    console.error("Speech error:", event.error);
+  };
+
+  recognition.start();
+}
+
+
+// ==================================================
+// Copy Text
+// ==================================================
+function copyText(elementId) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+
+  const text = el.value || el.innerText;
+  if (!text.trim()) return;
+
+  navigator.clipboard.writeText(text);
 }
