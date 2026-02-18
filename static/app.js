@@ -40,6 +40,17 @@ function normalizeLang(code) {
 // ==================================================
 document.addEventListener("DOMContentLoaded", () => {
   initLanguageSelectors();
+
+   // ===============================
+  // [ADDED] ตรวจสอบรองรับ SpeechRecognition
+  // ===============================
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    const micButtons = document.querySelectorAll(".mic-button");
+    micButtons.forEach(btn => btn.style.display = "none");
+  }
 });
 
 
@@ -295,7 +306,7 @@ function openTab(tabId) {
 
 
 // ==================================================
-// Text To Speech (TTS)
+// [ADD] TEXT TO SPEECH
 // ==================================================
 function speakText(elementId, langSelectorId) {
   const el = document.getElementById(elementId);
@@ -304,19 +315,22 @@ function speakText(elementId, langSelectorId) {
   const text = el.value || el.innerText;
   if (!text.trim()) return;
 
-  const langCode = document.getElementById(langSelectorId)?.value || "en";
+  const langCode =
+    document.getElementById(langSelectorId)?.value || "en";
 
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = langCode;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = langCode;
 
   speechSynthesis.cancel();
-  speechSynthesis.speak(utterance);
+  speechSynthesis.speak(utter);
 }
 
 
 // ==================================================
-// Speech To Text (Voice Input)
+// [ADD] SPEECH TO TEXT
 // ==================================================
+let recognitionInstance = null;
+
 function startSpeech(targetId) {
   const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -326,25 +340,20 @@ function startSpeech(targetId) {
     return;
   }
 
+  if (recognitionInstance) {
+    recognitionInstance.stop();
+  }
+
   const recognition = new SpeechRecognition();
+  recognitionInstance = recognition;
 
-  const lang =
+  recognition.lang =
     document.getElementById("src-lang")?.value || "en";
-
-  recognition.lang = lang;
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
 
   recognition.onresult = function (event) {
     const transcript = event.results[0][0].transcript;
     const target = document.getElementById(targetId);
-    if (target) {
-      target.value += transcript;
-    }
-  };
-
-  recognition.onerror = function (event) {
-    console.error("Speech error:", event.error);
+    if (target) target.value += transcript + " ";
   };
 
   recognition.start();
@@ -352,14 +361,12 @@ function startSpeech(targetId) {
 
 
 // ==================================================
-// Copy Text
+// [ADD] COPY FUNCTION
 // ==================================================
 function copyText(elementId) {
   const el = document.getElementById(elementId);
   if (!el) return;
 
   const text = el.value || el.innerText;
-  if (!text.trim()) return;
-
   navigator.clipboard.writeText(text);
 }
