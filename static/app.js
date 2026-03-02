@@ -2,7 +2,7 @@
 // Global Configuration
 // ==================================================
 //const API_BASE = "http://127.0.0.1:8000"; localhost
-const API_BASE = "https://east-sculpture-surrey-stamp.trycloudflare.com"; //publc domain (ต้องเปลี่ยนทุกครั้งที่ปิดเครื่อง หรือปิด terminal )
+const API_BASE = "https://tuning-benz-assessments-gage.trycloudflare.com"; //publc domain (ต้องเปลี่ยนทุกครั้งที่ปิดเครื่อง หรือปิด terminal )
 
 
 // ==================================================
