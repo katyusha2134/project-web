@@ -18,6 +18,14 @@ const AppState = {
 
   chat: {
     isBusy: false
+  },
+
+  // STT recording state
+  stt: {
+    mediaRecorder: null,
+    audioChunks:   [],
+    isRecording:   false,
+    activeBtnId:   null,
   }
 };
 
@@ -41,15 +49,11 @@ function normalizeLang(code) {
 document.addEventListener("DOMContentLoaded", () => {
   initLanguageSelectors();
 
-   // ===============================
-  // [ADDED] ตรวจสอบรองรับ SpeechRecognition
-  // ===============================
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    const micButtons = document.querySelectorAll(".mic-button");
-    micButtons.forEach(btn => btn.style.display = "none");
+  // ถ้า browser ไม่รองรับ MediaRecorder ให้ซ่อนปุ่ม mic
+  if (!navigator.mediaDevices || !window.MediaRecorder) {
+    document.querySelectorAll(".mic-button").forEach(btn => {
+      btn.style.display = "none";
+    });
   }
 });
 
@@ -72,8 +76,8 @@ const LANG_MAP = {
 };
 
 function initLanguageSelectors() {
-  const src = $("src-lang");
-  const tgt = $("tgt-lang");
+  const src    = $("src-lang");
+  const tgt    = $("tgt-lang");
   const ocrSrc = $("ocr-src-lang");
   const ocrTgt = $("ocr-tgt-lang");
 
@@ -88,8 +92,8 @@ function initLanguageSelectors() {
     });
   });
 
-  if (src) src.value = "en";
-  if (tgt) tgt.value = "th";
+  if (src)    src.value    = "en";
+  if (tgt)    tgt.value    = "th";
   if (ocrSrc) ocrSrc.value = "en";
   if (ocrTgt) ocrTgt.value = "th";
 
@@ -105,10 +109,9 @@ async function translateText() {
   const text = $("input-text")?.value.trim();
   if (!text) return alert("กรุณาใส่ข้อความ");
 
-  const src = normalizeLang($("src-lang").value);
-  const tgt = normalizeLang($("tgt-lang").value);
-  const engine =
-    document.querySelector('input[name="engine"]:checked')?.value || "auto";
+  const src    = normalizeLang($("src-lang").value);
+  const tgt    = normalizeLang($("tgt-lang").value);
+  const engine = document.querySelector('input[name="engine"]:checked')?.value || "auto";
 
   $("output-text").innerText = "กำลังแปล...";
 
@@ -116,17 +119,11 @@ async function translateText() {
     const res = await fetch(`${API_BASE}/api/v1/translate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text,
-        source_lang: src,
-        target_lang: tgt,
-        engine
-      })
+      body: JSON.stringify({ text, source_lang: src, target_lang: tgt, engine })
     });
 
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
-
     $("output-text").innerText = data.translation || "(ไม่สามารถแปลได้)";
   } catch (e) {
     console.error(e);
@@ -158,7 +155,7 @@ async function runOCR() {
     return "";
   }
 
-  $("ocr-extracted").innerText = "กำลังอ่านภาพ...";
+  $("ocr-extracted").innerText  = "กำลังอ่านภาพ...";
   $("ocr-translated").innerText = "-";
 
   const formData = new FormData();
@@ -172,7 +169,6 @@ async function runOCR() {
 
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
-
     $("ocr-extracted").innerText = data.text || "(ไม่พบข้อความ)";
     return data.text || "";
   } catch (e) {
@@ -201,17 +197,11 @@ async function translateImage() {
     const res = await fetch(`${API_BASE}/api/v1/translate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text: extracted,
-        source_lang: src,
-        target_lang: tgt,
-        engine: "auto"
-      })
+      body: JSON.stringify({ text: extracted, source_lang: src, target_lang: tgt, engine: "auto" })
     });
 
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
-
     $("ocr-translated").innerText = data.translation || "-";
   } catch (e) {
     console.error(e);
@@ -221,15 +211,15 @@ async function translateImage() {
 
 
 // ==================================================
-// Chat (Append-based, Gemini backend)
+// Chat (Append-based)
 // ==================================================
 function appendChatMessage(text, role = "bot") {
   const box = $("chat-history");
   if (!box) return;
 
   const div = document.createElement("div");
-  div.className = `msg ${role}`;
-  div.innerText = text.replace(/\*\*/g, "");
+  div.className  = `msg ${role}`;
+  div.innerText  = text.replace(/\*\*/g, "");
 
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
@@ -239,7 +229,7 @@ async function sendChat() {
   AppState.activeTab = "chat";
   if (AppState.chat.isBusy) return;
 
-  const input = $("chat-input");
+  const input   = $("chat-input");
   const history = $("chat-history");
   if (!input || !history) return;
 
@@ -280,7 +270,7 @@ async function sendChat() {
 function openTab(tabId) {
   AppState.activeTab =
     tabId.includes("chat") ? "chat" :
-    tabId.includes("ocr") ? "ocr" : "translate";
+    tabId.includes("ocr")  ? "ocr"  : "translate";
 
   document.querySelectorAll(".tab-content").forEach(el => {
     el.style.display = "none";
@@ -306,62 +296,135 @@ function openTab(tabId) {
 
 
 // ==================================================
-// [ADD] TEXT TO SPEECH
+// [REPLACED] TEXT TO SPEECH  →  Hybrid TTS  (server-side)
 // ==================================================
-function speakText(elementId, langSelectorId) {
+async function speakText(elementId, langSelectorId) {
   const el = document.getElementById(elementId);
   if (!el) return;
 
-  const text = el.value || el.innerText;
-  if (!text.trim()) return;
+  const text = (el.value || el.innerText || "").trim();
+  if (!text) return;
 
-  const langCode =
-    document.getElementById(langSelectorId)?.value || "en";
+  const langCode = normalizeLang(
+    document.getElementById(langSelectorId)?.value || "en"
+  );
 
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = langCode;
+  try {
+    const formData = new FormData();
+    formData.append("text",     text);
+    formData.append("language", langCode);
+    formData.append("speed",    "1.0");
 
-  speechSynthesis.cancel();
-  speechSynthesis.speak(utter);
+    const res = await fetch(`${API_BASE}/api/v1/tts`, {
+      method: "POST",
+      body:   formData,
+    });
+
+    if (!res.ok) throw new Error(`TTS failed: ${res.status}`);
+
+    // รับ audio blob (WAV หรือ MP3) แล้วเล่นทันที
+    const blob     = await res.blob();
+    const audioUrl = URL.createObjectURL(blob);
+    const audio    = new Audio(audioUrl);
+
+    audio.onended = () => URL.revokeObjectURL(audioUrl);
+    audio.play();
+  } catch (e) {
+    console.error("TTS error:", e);
+    alert("ไม่สามารถสังเคราะห์เสียงได้");
+  }
 }
 
 
 // ==================================================
-// [ADD] SPEECH TO TEXT
+// [REPLACED] SPEECH TO TEXT  →  faster-whisper  (server-side)
 // ==================================================
-let recognitionInstance = null;
 
-function startSpeech(targetId) {
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
+/**
+ * startSpeech(targetId)
+ *  - ครั้งแรก: เริ่ม record (ปุ่มเปลี่ยนเป็น 🔴)
+ *  - ครั้งสอง: หยุด → ส่ง audio ไป /api/v1/stt → ใส่ transcript ลงใน element
+ */
+async function startSpeech(targetId) {
+  const stt = AppState.stt;
 
-  if (!SpeechRecognition) {
-    alert("Browser ไม่รองรับ Speech Recognition");
+  // ─── หยุด recording ───────────────────────────────────────
+  if (stt.isRecording && stt.activeBtnId === targetId) {
+    stt.mediaRecorder.stop();
     return;
   }
 
-  if (recognitionInstance) {
-    recognitionInstance.stop();
+  // ─── เริ่ม recording ──────────────────────────────────────
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    stt.audioChunks  = [];
+    stt.isRecording  = true;
+    stt.activeBtnId  = targetId;
+
+    // หา mic button ที่ตรงกับ targetId แล้วเปลี่ยน icon
+    const micBtn = document.querySelector(
+      `.mic-button[onclick*="${targetId}"]`
+    );
+    if (micBtn) micBtn.textContent = "🔴";
+
+    const mediaRecorder = new MediaRecorder(stream);
+    stt.mediaRecorder   = mediaRecorder;
+
+    mediaRecorder.ondataavailable = e => {
+      if (e.data.size > 0) stt.audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+      // คืน icon กลับ
+      if (micBtn) micBtn.textContent = "🎤";
+
+      stt.isRecording = false;
+      stream.getTracks().forEach(t => t.stop());
+
+      const blob     = new Blob(stt.audioChunks, { type: "audio/webm" });
+      const formData = new FormData();
+      formData.append("file", blob, "recording.webm");
+
+      // ส่งภาษา src ตาม selector (ถ้ามี)
+      const langCode = normalizeLang(
+        document.getElementById("src-lang")?.value || "en"
+      );
+      formData.append("language", langCode);
+
+      try {
+        const target = document.getElementById(targetId);
+        if (target) target.value = "กำลังถอดความ...";
+
+        const res  = await fetch(`${API_BASE}/api/v1/stt`, {
+          method: "POST",
+          body:   formData,
+        });
+
+        if (!res.ok) throw new Error(`STT failed: ${res.status}`);
+        const data = await res.json();
+
+        if (target) target.value += (target.value.includes("กำลังถอดความ...") ? "" : " ") + (data.text || "");
+        if (target) target.value = target.value.replace("กำลังถอดความ...", "").trim();
+      } catch (err) {
+        console.error("STT error:", err);
+        const target = document.getElementById(targetId);
+        if (target) target.value = target.value.replace("กำลังถอดความ...", "").trim();
+        alert("ถอดความเสียงไม่สำเร็จ");
+      }
+    };
+
+    mediaRecorder.start();
+  } catch (err) {
+    console.error("Microphone error:", err);
+    alert("ไม่สามารถเข้าถึง Microphone ได้");
+    stt.isRecording = false;
   }
-
-  const recognition = new SpeechRecognition();
-  recognitionInstance = recognition;
-
-  recognition.lang =
-    document.getElementById("src-lang")?.value || "en";
-
-  recognition.onresult = function (event) {
-    const transcript = event.results[0][0].transcript;
-    const target = document.getElementById(targetId);
-    if (target) target.value += transcript + " ";
-  };
-
-  recognition.start();
 }
 
 
 // ==================================================
-// [ADD] COPY FUNCTION
+// [KEEP] COPY FUNCTION
 // ==================================================
 function copyText(elementId) {
   const el = document.getElementById(elementId);
