@@ -123,13 +123,19 @@ function initLanguageSelectors() {
 // [เพิ่ม] Auth — modal open/close, tab switch
 // ==================================================
 function openAuthModal(tab = "login") {
-  $("auth-modal").classList.remove("hidden");
+  const modal = $("auth-modal");
+  modal.classList.remove("hidden");
+  // [แก้ไข] บังคับ display ตรงๆ ผ่าน inline !important กัน CSS ภายนอก/cache เก่ามาชนอีก
+  modal.style.setProperty("display", "flex", "important");
   switchAuthTab(tab);
   hideAuthError();
 }
 
 function closeAuthModal() {
-  $("auth-modal").classList.add("hidden");
+  const modal = $("auth-modal");
+  modal.classList.add("hidden");
+  // [แก้ไข] บังคับ display ตรงๆ ผ่าน inline !important กัน CSS ภายนอก/cache เก่ามาชนอีก
+  modal.style.setProperty("display", "none", "important");
   hideAuthError();
   $("login-form").reset();
   $("register-form").reset();
@@ -304,7 +310,9 @@ function previewImage() {
   reader.onload = e => {
     const img = $("image-preview");
     img.src = e.target.result;
-    img.style.display = "block";
+    // [แก้ไข] เอา class "hidden" ออกแทนการตั้ง inline style เฉยๆ
+    // เพราะ .hidden ตอนนี้เป็น !important ต้องเอา class ออกจริงๆ ถึงจะโชว์ได้
+    img.classList.remove("hidden");
   };
   reader.readAsDataURL(file);
 }
