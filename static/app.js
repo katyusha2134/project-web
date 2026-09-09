@@ -2,7 +2,10 @@
 // Global Configuration
 // ==================================================
 //const API_BASE = "http://127.0.0.1:8000"; localhost
-const API_BASE = "https://scale-contest-coleman-britannica.trycloudflare.com"; //publc domain (ต้องเปลี่ยนทุกครั้งที่ปิดเครื่อง หรือปิด terminal )
+const API_BASE = "https://beach-reasoning-journalist-arising.trycloudflare.com"; //publc domain (ต้องเปลี่ยนทุกครั้งที่ปิดเครื่อง หรือปิด terminal )
+
+// [เพิ่ม] endpoint พื้นฐานของ auth
+const AUTH_BASE = `${API_BASE}/api/v1/auth`;
 
 
 // ==================================================
@@ -26,6 +29,12 @@ const AppState = {
     audioChunks:   [],
     isRecording:   false,
     activeBtnId:   null,
+  },
+
+  // [เพิ่ม] Auth state — token/username เก็บใน localStorage เพื่อให้ login ค้างข้าม session
+  auth: {
+    token:    localStorage.getItem("auth_token")    || null,
+    username: localStorage.getItem("auth_username") || null,
   }
 };
 
@@ -42,12 +51,20 @@ function normalizeLang(code) {
   return code.split("-")[0];
 }
 
+// [เพิ่ม] คืน header Authorization ถ้า login อยู่ — ใช้ spread เข้า fetch headers เดิมได้เลย
+function authHeaders() {
+  return AppState.auth.token
+    ? { Authorization: `Bearer ${AppState.auth.token}` }
+    : {};
+}
+
 
 // ==================================================
 // Init
 // ==================================================
 document.addEventListener("DOMContentLoaded", () => {
   initLanguageSelectors();
+  updateAuthUI(); // [เพิ่ม] อัปเดตแถบ auth ตาม token ที่มีอยู่ (ถ้าเคย login ค้างไว้)
 
   // ถ้า browser ไม่รองรับ MediaRecorder ให้ซ่อนปุ่ม mic
   if (!navigator.mediaDevices || !window.MediaRecorder) {
@@ -103,6 +120,149 @@ function initLanguageSelectors() {
 
 
 // ==================================================
+// [เพิ่ม] Auth — modal open/close, tab switch
+// ==================================================
+function openAuthModal(tab = "login") {
+  $("auth-modal").classList.remove("hidden");
+  switchAuthTab(tab);
+  hideAuthError();
+}
+
+function closeAuthModal() {
+  $("auth-modal").classList.add("hidden");
+  hideAuthError();
+  $("login-form").reset();
+  $("register-form").reset();
+}
+
+function switchAuthTab(tab) {
+  const isLogin = tab === "login";
+
+  $("auth-tab-login").classList.toggle("active", isLogin);
+  $("auth-tab-register").classList.toggle("active", !isLogin);
+  $("login-form").classList.toggle("hidden", !isLogin);
+  $("register-form").classList.toggle("hidden", isLogin);
+  hideAuthError();
+}
+
+function showAuthError(message) {
+  const el = $("auth-error");
+  el.innerText = message;
+  el.classList.remove("hidden");
+}
+
+function hideAuthError() {
+  $("auth-error").classList.add("hidden");
+}
+
+
+// ==================================================
+// [เพิ่ม] Auth — login / register / logout
+// ==================================================
+async function handleLogin(event) {
+  event.preventDefault();
+  hideAuthError();
+
+  const username = $("login-username").value.trim();
+  const password = $("login-password").value;
+
+  try {
+    // /api/v1/auth/login รับ OAuth2PasswordRequestForm → ต้องส่งเป็น form-urlencoded ไม่ใช่ JSON
+    const body = new URLSearchParams();
+    body.append("username", username);
+    body.append("password", password);
+
+    const res = await fetch(`${AUTH_BASE}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString()
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "เข้าสู่ระบบไม่สำเร็จ");
+
+    AppState.auth.token    = data.access_token;
+    AppState.auth.username = username;
+    localStorage.setItem("auth_token", data.access_token);
+    localStorage.setItem("auth_username", username);
+
+    updateAuthUI();
+    closeAuthModal();
+  } catch (e) {
+    console.error("Login error:", e);
+    showAuthError(e.message || "เข้าสู่ระบบไม่สำเร็จ");
+  }
+}
+
+async function handleRegister(event) {
+  event.preventDefault();
+  hideAuthError();
+
+  const username = $("register-username").value.trim();
+  const email    = $("register-email").value.trim();
+  const password = $("register-password").value;
+
+  try {
+    const res = await fetch(`${AUTH_BASE}/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, email, password })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "สมัครสมาชิกไม่สำเร็จ");
+
+    // สมัครสำเร็จ → login ต่อให้เลยเพื่อความลื่นไหล
+    const body = new URLSearchParams();
+    body.append("username", username);
+    body.append("password", password);
+
+    const loginRes = await fetch(`${AUTH_BASE}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString()
+    });
+    const loginData = await loginRes.json();
+    if (!loginRes.ok) throw new Error(loginData.detail || "สมัครสำเร็จ แต่เข้าสู่ระบบอัตโนมัติไม่สำเร็จ");
+
+    AppState.auth.token    = loginData.access_token;
+    AppState.auth.username = username;
+    localStorage.setItem("auth_token", loginData.access_token);
+    localStorage.setItem("auth_username", username);
+
+    updateAuthUI();
+    closeAuthModal();
+  } catch (e) {
+    console.error("Register error:", e);
+    showAuthError(e.message || "สมัครสมาชิกไม่สำเร็จ");
+  }
+}
+
+function handleLogout() {
+  AppState.auth.token    = null;
+  AppState.auth.username = null;
+  localStorage.removeItem("auth_token");
+  localStorage.removeItem("auth_username");
+  updateAuthUI();
+}
+
+function updateAuthUI() {
+  const guestBox = $("auth-guest");
+  const userBox  = $("auth-user");
+  const nameEl   = $("auth-username");
+
+  if (AppState.auth.token) {
+    guestBox.classList.add("hidden");
+    userBox.classList.remove("hidden");
+    nameEl.innerHTML = `<i class="fas fa-user-check"></i> ${AppState.auth.username}`;
+  } else {
+    guestBox.classList.remove("hidden");
+    userBox.classList.add("hidden");
+  }
+}
+
+
+// ==================================================
 // Text Translate
 // ==================================================
 async function translateText() {
@@ -118,7 +278,8 @@ async function translateText() {
   try {
     const res = await fetch(`${API_BASE}/api/v1/translate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      // [แก้ไข] แนบ Authorization header ถ้า login อยู่ — backend ผูกประวัติกับ user อัตโนมัติ
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ text, source_lang: src, target_lang: tgt, engine })
     });
 
@@ -164,6 +325,8 @@ async function runOCR() {
   try {
     const res = await fetch(`${API_BASE}/api/v1/ocr`, {
       method: "POST",
+      // [แก้ไข] แนบ token ถ้ามี — ห้ามตั้ง Content-Type เองตอนใช้ FormData (browser จัดการ boundary ให้)
+      headers: { ...authHeaders() },
       body: formData
     });
 
@@ -196,7 +359,8 @@ async function translateImage() {
   try {
     const res = await fetch(`${API_BASE}/api/v1/translate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      // [แก้ไข] แนบ token ถ้ามี
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ text: extracted, source_lang: src, target_lang: tgt, engine: "auto" })
     });
 
@@ -245,7 +409,8 @@ async function sendChat() {
   try {
     const res = await fetch(`${API_BASE}/api/v1/chatbot`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      // [แก้ไข] แนบ token ถ้ามี — backend จะผูก chat_sessions กับ user นี้อัตโนมัติ
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ message: msg })
     });
 

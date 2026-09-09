@@ -5,12 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Translator Pro</title>
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
-    <link rel="stylesheet" href="static/style.css">
+    <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
         <header>
+            <!-- [เพิ่ม] แถบ auth มุมขวาบน — สลับระหว่างปุ่ม "เข้าสู่ระบบ" กับชื่อ user + ปุ่มออกจากระบบ -->
+            <div class="auth-bar">
+                <div id="auth-guest" class="auth-guest">
+                    <button class="auth-btn" onclick="openAuthModal('login')">
+                        <i class="fas fa-user"></i> เข้าสู่ระบบ
+                    </button>
+                </div>
+                <div id="auth-user" class="auth-user hidden">
+                    <span id="auth-username"><i class="fas fa-user-check"></i></span>
+                    <button class="auth-btn auth-btn-ghost" onclick="handleLogout()">ออกจากระบบ</button>
+                </div>
+            </div>
+
             <h1><i class="fas fa-robot"></i> AI Translator Pro</h1>
             <p>แปลได้ทั่วโลก | สแกนภาพ | ถามตอบอัจฉริยะ</p>
         </header>
@@ -91,7 +104,7 @@
                 <div class="controls" style="margin-top: 15px;">
 
                     <!-- [ADD] OCR Source Language -->
-                    <!-- เพิ่มเพื่อให้ผู้ใช้เลือก “ภาษาของข้อความในภาพ” -->
+                    <!-- เพิ่มเพื่อให้ผู้ใช้เลือก "ภาษาของข้อความในภาพ" -->
                     <label>ภาษาต้นฉบับ:</label>
                     <select id="ocr-src-lang"></select>
 
@@ -141,6 +154,39 @@
         </div>
     </div>
 
-    <script src="static/app.js"></script>
+    <!-- ================================================= -->
+    <!-- [เพิ่ม] Auth Modal — login / register แบบสลับแท็บในกล่องเดียว -->
+    <!-- ================================================= -->
+    <div id="auth-modal" class="auth-modal-overlay hidden" onclick="if(event.target===this) closeAuthModal()">
+        <div class="auth-modal">
+            <button class="auth-modal-close" onclick="closeAuthModal()">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="auth-modal-tabs">
+                <button id="auth-tab-login" class="auth-modal-tab active" onclick="switchAuthTab('login')">เข้าสู่ระบบ</button>
+                <button id="auth-tab-register" class="auth-modal-tab" onclick="switchAuthTab('register')">สมัครสมาชิก</button>
+            </div>
+
+            <div id="auth-error" class="auth-error hidden"></div>
+
+            <!-- Login form -->
+            <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
+                <input type="text" id="login-username" placeholder="ชื่อผู้ใช้" required autocomplete="username">
+                <input type="password" id="login-password" placeholder="รหัสผ่าน" required autocomplete="current-password">
+                <button type="submit" class="action-btn">เข้าสู่ระบบ</button>
+            </form>
+
+            <!-- Register form -->
+            <form id="register-form" class="auth-form hidden" onsubmit="handleRegister(event)">
+                <input type="text" id="register-username" placeholder="ชื่อผู้ใช้ (อย่างน้อย 3 ตัวอักษร)" required autocomplete="username">
+                <input type="email" id="register-email" placeholder="อีเมล" required autocomplete="email">
+                <input type="password" id="register-password" placeholder="รหัสผ่าน (อย่างน้อย 8 ตัวอักษร)" required autocomplete="new-password">
+                <button type="submit" class="action-btn">สมัครสมาชิก</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
 </body>
 </html>
