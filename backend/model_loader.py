@@ -1,9 +1,9 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-from model_manager import scheduler
+from backend.model_manager import scheduler
 
 MODEL_NAME = "m2m100_seq2seq"
-MODEL_PATH = "/home/krit/qlora_env/main/m2m100_qlora/final_m2m100_model"
+MODEL_PATH = "/home/linux/web/m2m100_qlora/final_m2m100_model"
 
 tokenizer = None
 model = None

@@ -2,10 +2,10 @@ import re
 import torch  # type: ignore
 import gc
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig  # type: ignore
-from model_manager import scheduler
+from backend.model_manager import scheduler
 
 MODEL_NAME = "qwen"
-MODEL_PATH = "/home/krit/qlora_env/main/m2m100_qlora/Qwen2.5-3B-Instruct"
+MODEL_PATH = "/home/linux/web/m2m100_qlora/Qwen2.5-3B-Instruct"
 
 model = None
 tokenizer = None

@@ -1,10 +1,10 @@
 import torch  # type: ignore
 from transformers import M2M100ForConditionalGeneration, M2M100Tokenizer  # type: ignore
-from cloud_gemini import translate_cloud
-from model_manager import scheduler
+from backend.cloud_gemini import translate_cloud
+from backend.model_manager import scheduler
 
 MODEL_NAME = "m2m100"
-MODEL_PATH = "/home/krit/qlora_env/main/m2m100_qlora/final_m2m100_model"
+MODEL_PATH = "/home/linux/web/m2m100_qlora/final_m2m100_model"
 
 model = None
 tokenizer = None

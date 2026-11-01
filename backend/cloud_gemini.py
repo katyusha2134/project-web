@@ -1,9 +1,11 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 import google.generativeai as genai
 
-# โหลด env ให้ชัดเจน
-load_dotenv()
+# โหลด backend/.env โดยอ้างอิงจากตำแหน่งไฟล์นี้
+BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(BASE_DIR / ".env")
 
 API_KEY = os.getenv("GEMINI_API_KEY")
 MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
