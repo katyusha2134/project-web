@@ -343,7 +343,7 @@ function previewImage() {
   reader.onload = e => {
     const img = $("image-preview");
     img.src = e.target.result;
-    img.style.display = "block";
+    img.classList.remove("hidden");   // เอา class hidden ออกแทน
   };
   reader.readAsDataURL(file);
 }
