@@ -5,13 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Translator Pro</title>
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
-    <link rel="stylesheet" href="static/style.css">
+    <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <!-- [ADD] Animated background blobs -->
+    <div class="bg-blobs" aria-hidden="true">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
     <div class="container">
         <header>
-            <!-- [เพิ่ม] แถบ auth มุมขวาบน — สลับระหว่างปุ่ม "เข้าสู่ระบบ" กับชื่อ user + ปุ่มออกจากระบบ -->
             <div class="auth-bar">
                 <div id="auth-guest" class="auth-guest">
                     <button class="auth-btn" onclick="openAuthModal('login')">
@@ -42,18 +48,16 @@
 
         <div class="content-box">
 
-            <!-- ===================== -->
             <!-- Text Translation Tab -->
-            <!-- ===================== -->
             <div id="translate-tab" class="tab-content active">
                 <div class="controls">
                     <select id="src-lang"></select>
-                    <i class="fas fa-exchange-alt arrow-icon" onclick="swapLanguages()"></i>
+                    <i class="fas fa-exchange-alt arrow-icon" onclick="swapLanguages()" title="สลับภาษา"></i>
                     <select id="tgt-lang"></select>
                 </div>
 
                 <div class="text-area-container">
-                    <textarea id="input-text" placeholder="พิมพ์ข้อความที่นี่..."></textarea>
+                    <textarea id="input-text" placeholder="พิมพ์ข้อความที่นี่..." maxlength="5000" oninput="updateCharCount()"></textarea>
                     <div class="tools-bar">
                         <button onclick="startSpeech('input-text')" title="พูดด้วยเสียง">
                             <i class="fas fa-microphone"></i>
@@ -64,10 +68,13 @@
                         <button onclick="copyText('input-text')" title="คัดลอก">
                             <i class="fas fa-copy"></i>
                         </button>
+                        <span class="char-count" id="char-count">0 / 5000</span>
                     </div>
                 </div>
 
-                <button class="action-btn" onclick="translateText()">แปลทันที</button>
+                <button class="action-btn" onclick="translateText(event)">
+                    <i class="fas fa-bolt"></i> แปลทันที
+                </button>
 
                 <div class="result-area">
                     <div id="output-text">ผลลัพธ์จะปรากฏที่นี่...</div>
@@ -82,40 +89,32 @@
                 </div>
             </div>
 
-            <!-- ================= -->
             <!-- OCR Translation -->
-            <!-- ================= -->
             <div id="ocr-tab" class="tab-content" style="display:none;">
-
                 <div class="upload-area" onclick="document.getElementById('image-input').click()">
                     <i class="fas fa-cloud-upload-alt"></i>
                     <p>คลิกเพื่ออัปโหลดรูปภาพ</p>
-                    <input
-                        type="file"
-                        id="image-input"
-                        hidden
-                        accept="image/*"
-                        onchange="previewImage()"
-                    >
+                    <input type="file" id="image-input" hidden accept="image/*" onchange="previewImage()">
                 </div>
 
                 <img id="image-preview" class="hidden" alt="Preview">
 
-                <div class="controls" style="margin-top: 15px;">
-
-                    <!-- [ADD] OCR Source Language -->
-                    <!-- เพิ่มเพื่อให้ผู้ใช้เลือก "ภาษาของข้อความในภาพ" -->
-                    <label>ภาษาต้นฉบับ:</label>
-                    <select id="ocr-src-lang"></select>
-
-                    <!-- [UNCHANGED] OCR Target Language -->
-                    <!-- ยังคงเป็น Target Language ตาม requirement -->
-                    <label>แปลเป็น:</label>
-                    <select id="ocr-tgt-lang"></select>
-
+                <div class="ocr-lang-row" style="margin-top: 15px;">
+                    <div class="ocr-lang-box">
+                        <label>ภาษาต้นฉบับ:</label>
+                        <select id="ocr-src-lang"></select>
+                        <small class="hint-text">ภาษาของข้อความในภาพ</small>
+                    </div>
+                    <div class="ocr-lang-box">
+                        <label>แปลเป็น:</label>
+                        <select id="ocr-tgt-lang"></select>
+                        <small class="hint-text">ภาษาที่ต้องการแปล</small>
+                    </div>
                 </div>
 
-                <button class="action-btn" onclick="translateImage()">สแกนและแปล</button>
+                <button class="action-btn" onclick="translateImage(event)">
+                    <i class="fas fa-magic"></i> สแกนและแปล
+                </button>
 
                 <div class="ocr-result-grid">
                     <div class="box">
@@ -129,9 +128,7 @@
                 </div>
             </div>
 
-            <!-- ============ -->
             <!-- Chatbot Tab -->
-            <!-- ============ -->
             <div id="chat-tab" class="tab-content" style="display:none;">
                 <div class="chat-box" id="chat-history">
                     <div class="msg bot">
@@ -140,23 +137,16 @@
                 </div>
 
                 <div class="chat-input-area">
-                    <input
-                        type="text"
-                        id="chat-input"
-                        placeholder="เช่น 'Water' แปลว่าอะไร?"
-                    >
+                    <input type="text" id="chat-input" placeholder="เช่น 'Water' แปลว่าอะไร?" onkeydown="if(event.key==='Enter') sendChat()">
                     <button onclick="sendChat()">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
             </div>
-
         </div>
     </div>
 
-    <!-- ================================================= -->
-    <!-- [เพิ่ม] Auth Modal — login / register แบบสลับแท็บในกล่องเดียว -->
-    <!-- ================================================= -->
+    <!-- Auth Modal -->
     <div id="auth-modal" class="auth-modal-overlay hidden" onclick="if(event.target===this) closeAuthModal()">
         <div class="auth-modal">
             <button class="auth-modal-close" onclick="closeAuthModal()">
@@ -170,14 +160,12 @@
 
             <div id="auth-error" class="auth-error hidden"></div>
 
-            <!-- Login form -->
             <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
                 <input type="text" id="login-username" placeholder="ชื่อผู้ใช้" required autocomplete="username">
                 <input type="password" id="login-password" placeholder="รหัสผ่าน" required autocomplete="current-password">
                 <button type="submit" class="action-btn">เข้าสู่ระบบ</button>
             </form>
 
-            <!-- Register form -->
             <form id="register-form" class="auth-form hidden" onsubmit="handleRegister(event)">
                 <input type="text" id="register-username" placeholder="ชื่อผู้ใช้ (อย่างน้อย 3 ตัวอักษร)" required autocomplete="username">
                 <input type="email" id="register-email" placeholder="อีเมล" required autocomplete="email">
@@ -187,6 +175,9 @@
         </div>
     </div>
 
-    <script src="static/app.js"></script>
+    <!-- [ADD] Toast container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="/static/app.js"></script>
 </body>
 </html>

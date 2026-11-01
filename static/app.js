@@ -1,95 +1,114 @@
 // ==================================================
 // Global Configuration
 // ==================================================
-//const API_BASE = "http://127.0.0.1:8000"; localhost
-const API_BASE = "https://setting-dense-imposed-drug.trycloudflare.com"; //publc domain (ต้องเปลี่ยนทุกครั้งที่ปิดเครื่อง หรือปิด terminal )
-
-// [เพิ่ม] endpoint พื้นฐานของ auth
+const API_BASE = "https://beach-reasoning-journalist-arising.trycloudflare.com";
 const AUTH_BASE = `${API_BASE}/api/v1/auth`;
-
 
 // ==================================================
 // Global App State
 // ==================================================
 const AppState = {
   activeTab: "translate",
-
-  ocr: {
-    srcLang: "en",
-    tgtLang: "th"
-  },
-
-  chat: {
-    isBusy: false
-  },
-
-  // STT recording state
-  stt: {
-    mediaRecorder: null,
-    audioChunks:   [],
-    isRecording:   false,
-    activeBtnId:   null,
-  },
-
-  // [เพิ่ม] Auth state — token/username เก็บใน localStorage เพื่อให้ login ค้างข้าม session
+  ocr:  { srcLang: "en", tgtLang: "th" },
+  chat: { isBusy: false },
+  stt:  { mediaRecorder: null, audioChunks: [], isRecording: false, activeBtnId: null },
   auth: {
     token:    localStorage.getItem("auth_token")    || null,
     username: localStorage.getItem("auth_username") || null,
   }
 };
 
-
 // ==================================================
 // Utils
 // ==================================================
-function $(id) {
-  return document.getElementById(id);
-}
+function $(id) { return document.getElementById(id); }
 
 function normalizeLang(code) {
   if (!code) return "en";
   return code.split("-")[0];
 }
 
-// [เพิ่ม] คืน header Authorization ถ้า login อยู่ — ใช้ spread เข้า fetch headers เดิมได้เลย
 function authHeaders() {
-  return AppState.auth.token
-    ? { Authorization: `Bearer ${AppState.auth.token}` }
-    : {};
+  return AppState.auth.token ? { Authorization: `Bearer ${AppState.auth.token}` } : {};
 }
 
+/** [ADD] Toast notification */
+function showToast(message, type = "info", duration = 3000) {
+  const container = $("toast-container");
+  if (!container) return;
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  toast.style.animationDuration = `${duration}ms`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), duration);
+}
+
+/** [ADD] Shake feedback */
+function shakeElement(el) {
+  if (!el) return;
+  el.classList.add("shake");
+  setTimeout(() => el.classList.remove("shake"), 450);
+}
+
+/** [ADD] Button loading state */
+function setButtonLoading(btn, loading) {
+  if (!btn) return;
+  if (loading) {
+    btn.classList.add("btn-loading");
+    btn.disabled = true;
+  } else {
+    btn.classList.remove("btn-loading");
+    btn.disabled = false;
+  }
+}
+
+/** [ADD] Character counter */
+function updateCharCount() {
+  const ta = $("input-text");
+  const counter = $("char-count");
+  if (!ta || !counter) return;
+  const len = ta.value.length;
+  const max = ta.maxLength > 0 ? ta.maxLength : 5000;
+  counter.textContent = `${len} / ${max}`;
+  counter.classList.toggle("warn",   len > max * 0.8 && len <= max * 0.95);
+  counter.classList.toggle("danger", len > max * 0.95);
+}
+
+/** [ADD] Ripple effect on all buttons */
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn || btn.disabled) return;
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  const ripple = document.createElement("span");
+  ripple.className = "btn-ripple";
+  ripple.style.width  = ripple.style.height = `${size}px`;
+  ripple.style.left   = `${e.clientX - rect.left - size / 2}px`;
+  ripple.style.top    = `${e.clientY - rect.top  - size / 2}px`;
+  btn.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 620);
+});
 
 // ==================================================
 // Init
 // ==================================================
 document.addEventListener("DOMContentLoaded", () => {
   initLanguageSelectors();
-  updateAuthUI(); // [เพิ่ม] อัปเดตแถบ auth ตาม token ที่มีอยู่ (ถ้าเคย login ค้างไว้)
+  updateAuthUI();
+  updateCharCount();
 
-  // ถ้า browser ไม่รองรับ MediaRecorder ให้ซ่อนปุ่ม mic
   if (!navigator.mediaDevices || !window.MediaRecorder) {
-    document.querySelectorAll(".mic-button").forEach(btn => {
-      btn.style.display = "none";
-    });
+    document.querySelectorAll(".mic-button").forEach(btn => btn.style.display = "none");
   }
 });
-
 
 // ==================================================
 // Language Selectors
 // ==================================================
 const LANG_MAP = {
-  en: "English",
-  th: "Thai",
-  ja: "Japanese",
-  zh: "Chinese",
-  ko: "Korean",
-  fr: "French",
-  de: "German",
-  es: "Spanish",
-  ru: "Russian",
-  vi: "Vietnamese",
-  id: "Indonesian"
+  en: "English", th: "Thai", ja: "Japanese", zh: "Chinese", ko: "Korean",
+  fr: "French",  de: "German", es: "Spanish", ru: "Russian", vi: "Vietnamese", id: "Indonesian"
 };
 
 function initLanguageSelectors() {
@@ -118,24 +137,27 @@ function initLanguageSelectors() {
   if (ocrTgt) ocrTgt.onchange = () => AppState.ocr.tgtLang = ocrTgt.value;
 }
 
+/** [ADD] Swap languages */
+function swapLanguages() {
+  const src = $("src-lang");
+  const tgt = $("tgt-lang");
+  if (!src || !tgt) return;
+  const tmp = src.value;
+  src.value = tgt.value;
+  tgt.value = tmp;
+}
 
 // ==================================================
-// [เพิ่ม] Auth — modal open/close, tab switch
+// Auth
 // ==================================================
 function openAuthModal(tab = "login") {
-  const modal = $("auth-modal");
-  modal.classList.remove("hidden");
-  // [แก้ไข] บังคับ display ตรงๆ ผ่าน inline !important กัน CSS ภายนอก/cache เก่ามาชนอีก
-  modal.style.setProperty("display", "flex", "important");
+  $("auth-modal").classList.remove("hidden");
   switchAuthTab(tab);
   hideAuthError();
 }
 
 function closeAuthModal() {
-  const modal = $("auth-modal");
-  modal.classList.add("hidden");
-  // [แก้ไข] บังคับ display ตรงๆ ผ่าน inline !important กัน CSS ภายนอก/cache เก่ามาชนอีก
-  modal.style.setProperty("display", "none", "important");
+  $("auth-modal").classList.add("hidden");
   hideAuthError();
   $("login-form").reset();
   $("register-form").reset();
@@ -143,7 +165,6 @@ function closeAuthModal() {
 
 function switchAuthTab(tab) {
   const isLogin = tab === "login";
-
   $("auth-tab-login").classList.toggle("active", isLogin);
   $("auth-tab-register").classList.toggle("active", !isLogin);
   $("login-form").classList.toggle("hidden", !isLogin);
@@ -157,14 +178,8 @@ function showAuthError(message) {
   el.classList.remove("hidden");
 }
 
-function hideAuthError() {
-  $("auth-error").classList.add("hidden");
-}
+function hideAuthError() { $("auth-error").classList.add("hidden"); }
 
-
-// ==================================================
-// [เพิ่ม] Auth — login / register / logout
-// ==================================================
 async function handleLogin(event) {
   event.preventDefault();
   hideAuthError();
@@ -173,7 +188,6 @@ async function handleLogin(event) {
   const password = $("login-password").value;
 
   try {
-    // /api/v1/auth/login รับ OAuth2PasswordRequestForm → ต้องส่งเป็น form-urlencoded ไม่ใช่ JSON
     const body = new URLSearchParams();
     body.append("username", username);
     body.append("password", password);
@@ -194,6 +208,7 @@ async function handleLogin(event) {
 
     updateAuthUI();
     closeAuthModal();
+    showToast(`ยินดีต้อนรับ ${username}`, "success");
   } catch (e) {
     console.error("Login error:", e);
     showAuthError(e.message || "เข้าสู่ระบบไม่สำเร็จ");
@@ -218,7 +233,6 @@ async function handleRegister(event) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || "สมัครสมาชิกไม่สำเร็จ");
 
-    // สมัครสำเร็จ → login ต่อให้เลยเพื่อความลื่นไหล
     const body = new URLSearchParams();
     body.append("username", username);
     body.append("password", password);
@@ -238,6 +252,7 @@ async function handleRegister(event) {
 
     updateAuthUI();
     closeAuthModal();
+    showToast("สมัครสมาชิกสำเร็จ 🎉", "success");
   } catch (e) {
     console.error("Register error:", e);
     showAuthError(e.message || "สมัครสมาชิกไม่สำเร็จ");
@@ -250,6 +265,7 @@ function handleLogout() {
   localStorage.removeItem("auth_token");
   localStorage.removeItem("auth_username");
   updateAuthUI();
+  showToast("ออกจากระบบแล้ว", "info");
 }
 
 function updateAuthUI() {
@@ -267,24 +283,30 @@ function updateAuthUI() {
   }
 }
 
-
 // ==================================================
 // Text Translate
 // ==================================================
-async function translateText() {
-  const text = $("input-text")?.value.trim();
-  if (!text) return alert("กรุณาใส่ข้อความ");
+async function translateText(event) {
+  const btn = event?.currentTarget;
+  const inputEl = $("input-text");
+  const text = inputEl?.value.trim();
+
+  if (!text) {
+    showToast("กรุณาใส่ข้อความ", "error");
+    shakeElement(inputEl);
+    return;
+  }
 
   const src    = normalizeLang($("src-lang").value);
   const tgt    = normalizeLang($("tgt-lang").value);
   const engine = document.querySelector('input[name="engine"]:checked')?.value || "auto";
 
+  setButtonLoading(btn, true);
   $("output-text").innerText = "กำลังแปล...";
 
   try {
     const res = await fetch(`${API_BASE}/api/v1/translate`, {
       method: "POST",
-      // [แก้ไข] แนบ Authorization header ถ้า login อยู่ — backend ผูกประวัติกับ user อัตโนมัติ
       headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ text, source_lang: src, target_lang: tgt, engine })
     });
@@ -292,12 +314,23 @@ async function translateText() {
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
     $("output-text").innerText = data.translation || "(ไม่สามารถแปลได้)";
+
+    // [ADD] Success flash
+    const resultArea = document.querySelector(".result-area");
+    if (resultArea) {
+      resultArea.classList.remove("flash");
+      void resultArea.offsetWidth;
+      resultArea.classList.add("flash");
+    }
+    showToast("แปลสำเร็จ", "success", 2000);
   } catch (e) {
     console.error(e);
     $("output-text").innerText = "แปลไม่สำเร็จ";
+    showToast("แปลไม่สำเร็จ กรุณาลองใหม่", "error");
+  } finally {
+    setButtonLoading(btn, false);
   }
 }
-
 
 // ==================================================
 // OCR
@@ -310,9 +343,7 @@ function previewImage() {
   reader.onload = e => {
     const img = $("image-preview");
     img.src = e.target.result;
-    // [แก้ไข] เอา class "hidden" ออกแทนการตั้ง inline style เฉยๆ
-    // เพราะ .hidden ตอนนี้เป็น !important ต้องเอา class ออกจริงๆ ถึงจะโชว์ได้
-    img.classList.remove("hidden");
+    img.style.display = "block";
   };
   reader.readAsDataURL(file);
 }
@@ -320,7 +351,7 @@ function previewImage() {
 async function runOCR() {
   const input = $("image-input");
   if (!input || input.files.length === 0) {
-    alert("กรุณาเลือกรูปภาพ");
+    showToast("กรุณาเลือกรูปภาพ", "error");
     return "";
   }
 
@@ -333,7 +364,6 @@ async function runOCR() {
   try {
     const res = await fetch(`${API_BASE}/api/v1/ocr`, {
       method: "POST",
-      // [แก้ไข] แนบ token ถ้ามี — ห้ามตั้ง Content-Type เองตอนใช้ FormData (browser จัดการ boundary ให้)
       headers: { ...authHeaders() },
       body: formData
     });
@@ -345,29 +375,27 @@ async function runOCR() {
   } catch (e) {
     console.error(e);
     $("ocr-extracted").innerText = "OCR ล้มเหลว";
+    showToast("OCR ล้มเหลว", "error");
     return "";
   }
 }
 
-
-// ==================================================
-// OCR → Translate
-// ==================================================
-async function translateImage() {
+async function translateImage(event) {
+  const btn = event?.currentTarget;
   AppState.activeTab = "ocr";
 
-  const extracted = await runOCR();
-  if (!extracted.trim()) return;
-
-  const src = normalizeLang(AppState.ocr.srcLang);
-  const tgt = normalizeLang(AppState.ocr.tgtLang);
-
-  $("ocr-translated").innerText = "กำลังแปล...";
-
+  setButtonLoading(btn, true);
   try {
+    const extracted = await runOCR();
+    if (!extracted.trim()) return;
+
+    const src = normalizeLang(AppState.ocr.srcLang);
+    const tgt = normalizeLang(AppState.ocr.tgtLang);
+
+    $("ocr-translated").innerText = "กำลังแปล...";
+
     const res = await fetch(`${API_BASE}/api/v1/translate`, {
       method: "POST",
-      // [แก้ไข] แนบ token ถ้ามี
       headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ text: extracted, source_lang: src, target_lang: tgt, engine: "auto" })
     });
@@ -375,26 +403,40 @@ async function translateImage() {
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
     $("ocr-translated").innerText = data.translation || "-";
+    showToast("สแกนและแปลสำเร็จ", "success", 2000);
   } catch (e) {
     console.error(e);
     $("ocr-translated").innerText = "แปลไม่สำเร็จ";
+    showToast("แปลไม่สำเร็จ", "error");
+  } finally {
+    setButtonLoading(btn, false);
   }
 }
 
-
 // ==================================================
-// Chat (Append-based)
+// Chat
 // ==================================================
 function appendChatMessage(text, role = "bot") {
   const box = $("chat-history");
   if (!box) return;
-
   const div = document.createElement("div");
-  div.className  = `msg ${role}`;
-  div.innerText  = text.replace(/\*\*/g, "");
-
+  div.className = `msg ${role}`;
+  div.innerText = text.replace(/\*\*/g, "");
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
+  return div;
+}
+
+/** [ADD] Typing indicator (animated dots) */
+function appendTypingIndicator() {
+  const box = $("chat-history");
+  if (!box) return null;
+  const div = document.createElement("div");
+  div.className = "msg bot";
+  div.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  return div;
 }
 
 async function sendChat() {
@@ -412,12 +454,11 @@ async function sendChat() {
   input.value = "";
 
   appendChatMessage(msg, "user");
-  appendChatMessage("กำลังคิด...", "bot");
+  const typingEl = appendTypingIndicator();
 
   try {
     const res = await fetch(`${API_BASE}/api/v1/chatbot`, {
       method: "POST",
-      // [แก้ไข] แนบ token ถ้ามี — backend จะผูก chat_sessions กับ user นี้อัตโนมัติ
       headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ message: msg })
     });
@@ -425,17 +466,17 @@ async function sendChat() {
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
 
-    history.lastChild.remove();
+    typingEl?.remove();
     appendChatMessage(data.reply || "(ไม่มีคำตอบ)", "bot");
   } catch (e) {
     console.error(e);
-    history.lastChild.remove();
+    typingEl?.remove();
     appendChatMessage("Chatbot ไม่สามารถตอบได้", "bot");
+    showToast("ส่งข้อความไม่สำเร็จ", "error");
   } finally {
     AppState.chat.isBusy = false;
   }
 }
-
 
 // ==================================================
 // Tabs
@@ -450,9 +491,7 @@ function openTab(tabId) {
     el.classList.remove("active");
   });
 
-  document.querySelectorAll(".tab-btn").forEach(btn => {
-    btn.classList.remove("active");
-  });
+  document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
 
   const tab = document.getElementById(tabId);
   if (tab) {
@@ -461,15 +500,12 @@ function openTab(tabId) {
   }
 
   document.querySelectorAll(".tab-btn").forEach(btn => {
-    if (btn.getAttribute("onclick")?.includes(tabId)) {
-      btn.classList.add("active");
-    }
+    if (btn.getAttribute("onclick")?.includes(tabId)) btn.classList.add("active");
   });
 }
 
-
 // ==================================================
-// [REPLACED] TEXT TO SPEECH  →  Hybrid TTS  (server-side)
+// TEXT TO SPEECH (server-side)
 // ==================================================
 async function speakText(elementId, langSelectorId) {
   const el = document.getElementById(elementId);
@@ -478,80 +514,65 @@ async function speakText(elementId, langSelectorId) {
   const text = (el.value || el.innerText || "").trim();
   if (!text) return;
 
-  const langCode = normalizeLang(
-    document.getElementById(langSelectorId)?.value || "en"
-  );
+  const langCode = normalizeLang(document.getElementById(langSelectorId)?.value || "en");
 
   try {
     const formData = new FormData();
-    formData.append("text",     text);
+    formData.append("text", text);
     formData.append("language", langCode);
-    formData.append("speed",    "1.0");
+    formData.append("speed", "1.0");
 
     const res = await fetch(`${API_BASE}/api/v1/tts`, {
       method: "POST",
-      body:   formData,
+      body: formData,
     });
 
     if (!res.ok) throw new Error(`TTS failed: ${res.status}`);
 
-    // รับ audio blob (WAV หรือ MP3) แล้วเล่นทันที
-    const blob     = await res.blob();
+    const blob = await res.blob();
     const audioUrl = URL.createObjectURL(blob);
-    const audio    = new Audio(audioUrl);
+    const audio = new Audio(audioUrl);
 
     audio.onended = () => URL.revokeObjectURL(audioUrl);
     audio.play();
   } catch (e) {
     console.error("TTS error:", e);
-    alert("ไม่สามารถสังเคราะห์เสียงได้");
+    showToast("ไม่สามารถสังเคราะห์เสียงได้", "error");
   }
 }
 
-
 // ==================================================
-// [REPLACED] SPEECH TO TEXT  →  faster-whisper  (server-side)
+// SPEECH TO TEXT (faster-whisper)
 // ==================================================
-
-/**
- * startSpeech(targetId)
- *  - ครั้งแรก: เริ่ม record (ปุ่มเปลี่ยนเป็น 🔴)
- *  - ครั้งสอง: หยุด → ส่ง audio ไป /api/v1/stt → ใส่ transcript ลงใน element
- */
 async function startSpeech(targetId) {
   const stt = AppState.stt;
 
-  // ─── หยุด recording ───────────────────────────────────────
+  // หยุด recording
   if (stt.isRecording && stt.activeBtnId === targetId) {
     stt.mediaRecorder.stop();
     return;
   }
 
-  // ─── เริ่ม recording ──────────────────────────────────────
+  // เริ่ม recording
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    stt.audioChunks  = [];
-    stt.isRecording  = true;
-    stt.activeBtnId  = targetId;
+    stt.audioChunks = [];
+    stt.isRecording = true;
+    stt.activeBtnId = targetId;
 
-    // หา mic button ที่ตรงกับ targetId แล้วเปลี่ยน icon
-    const micBtn = document.querySelector(
-      `.mic-button[onclick*="${targetId}"]`
-    );
+    const micBtn = document.querySelector(`.mic-button[onclick*="${targetId}"]`);
     if (micBtn) micBtn.textContent = "🔴";
 
     const mediaRecorder = new MediaRecorder(stream);
-    stt.mediaRecorder   = mediaRecorder;
+    stt.mediaRecorder = mediaRecorder;
 
     mediaRecorder.ondataavailable = e => {
       if (e.data.size > 0) stt.audioChunks.push(e.data);
     };
 
     mediaRecorder.onstop = async () => {
-      // คืน icon กลับ
       if (micBtn) micBtn.textContent = "🎤";
-
       stt.isRecording = false;
       stream.getTracks().forEach(t => t.stop());
 
@@ -559,10 +580,7 @@ async function startSpeech(targetId) {
       const formData = new FormData();
       formData.append("file", blob, "recording.webm");
 
-      // ส่งภาษา src ตาม selector (ถ้ามี)
-      const langCode = normalizeLang(
-        document.getElementById("src-lang")?.value || "en"
-      );
+      const langCode = normalizeLang(document.getElementById("src-lang")?.value || "en");
       formData.append("language", langCode);
 
       try {
@@ -571,38 +589,39 @@ async function startSpeech(targetId) {
 
         const res  = await fetch(`${API_BASE}/api/v1/stt`, {
           method: "POST",
-          body:   formData,
+          body: formData,
         });
 
         if (!res.ok) throw new Error(`STT failed: ${res.status}`);
         const data = await res.json();
 
-        if (target) target.value += (target.value.includes("กำลังถอดความ...") ? "" : " ") + (data.text || "");
-        if (target) target.value = target.value.replace("กำลังถอดความ...", "").trim();
+        if (target) target.value = (data.text || "").trim();
       } catch (err) {
         console.error("STT error:", err);
         const target = document.getElementById(targetId);
         if (target) target.value = target.value.replace("กำลังถอดความ...", "").trim();
-        alert("ถอดความเสียงไม่สำเร็จ");
+        showToast("ถอดความเสียงไม่สำเร็จ", "error");
       }
     };
 
     mediaRecorder.start();
+    showToast("กำลังฟัง... พูดได้เลย", "info", 2000);
   } catch (err) {
     console.error("Microphone error:", err);
-    alert("ไม่สามารถเข้าถึง Microphone ได้");
+    showToast("ไม่สามารถเข้าถึง Microphone ได้", "error");
     stt.isRecording = false;
   }
 }
 
-
 // ==================================================
-// [KEEP] COPY FUNCTION
+// COPY
 // ==================================================
 function copyText(elementId) {
   const el = document.getElementById(elementId);
   if (!el) return;
 
   const text = el.value || el.innerText;
-  navigator.clipboard.writeText(text);
+  navigator.clipboard.writeText(text)
+    .then(() => showToast("คัดลอกแล้ว ✓", "success", 1800))
+    .catch(() => showToast("คัดลอกไม่สำเร็จ", "error"));
 }
