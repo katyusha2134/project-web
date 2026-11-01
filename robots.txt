@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://katyusha2134.github.io/project-web/sitemap.xml
