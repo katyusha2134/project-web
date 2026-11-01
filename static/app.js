@@ -1,7 +1,7 @@
 // ==================================================
 // Global Configuration
 // ==================================================
-const API_BASE = "https://beach-reasoning-journalist-arising.trycloudflare.com";
+const API_BASE = "https://promoted-francis-documents-suit.trycloudflare.com";
 const AUTH_BASE = `${API_BASE}/api/v1/auth`;
 
 // ==================================================
