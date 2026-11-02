@@ -1,7 +1,7 @@
 // ==================================================
 // Global Configuration
 // ==================================================
-const API_BASE = "https://researchers-icq-main-folders.trycloudflare.com";
+const API_BASE = "https://shaved-introducing-cabinet-orbit.trycloudflare.com";
 const AUTH_BASE = `${API_BASE}/api/v1/auth`;
 
 // ==================================================
