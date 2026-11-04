@@ -1,7 +1,7 @@
 // ==================================================
 // Global Configuration
 // ==================================================
-const API_BASE = "https://persian-funeral-concerning-chorus.trycloudflare.com";
+const API_BASE = "https://nelson-independent-hotel-provinces.trycloudflare.com";
 const AUTH_BASE = `${API_BASE}/api/v1/auth`;
 
 // ==================================================
